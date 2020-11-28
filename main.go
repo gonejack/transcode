@@ -161,6 +161,8 @@ func processFile(file string) (err error) {
 	verbose("[TRANSFER] %s => %s done", input.Name(), output.Name())
 
 	if doDisk {
+		outputName := input.Name() + ".out"
+
 		if doReplace {
 			verbose("[REMOVE] %s", input.Name())
 			err = os.Remove(input.Name())
@@ -170,23 +172,16 @@ func processFile(file string) (err error) {
 			}
 			verbose("[REMOVE] %s done", input.Name())
 
-			verbose("[RENAME] %s => %s", output.Name(), input.Name())
-			err = os.Rename(output.Name(), input.Name())
-			if err != nil {
-				err = fmt.Errorf("rename %s => %s failed: %w", output.Name(), input.Name(), err)
-				return
-			}
-			verbose("[RENAME] %s => %s", output.Name(), input.Name())
-		} else {
-			rename := input.Name() + ".out"
-			verbose("[RENAME] %s => %s", output.Name(), rename)
-			err = os.Rename(output.Name(), rename)
-			if err != nil {
-				err = fmt.Errorf("rename %s => %s failed: %w", output.Name(), rename, err)
-				return
-			}
-			verbose("[RENAME] %s => %s", output.Name(), rename)
+			outputName = input.Name()
 		}
+
+		verbose("[RENAME] %s => %s", output.Name(), outputName)
+		err = os.Rename(output.Name(), outputName)
+		if err != nil {
+			err = fmt.Errorf("rename %s => %s failed: %w", output.Name(), outputName, err)
+			return
+		}
+		verbose("[RENAME] %s => %s", output.Name(), outputName)
 	}
 
 	return
