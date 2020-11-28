@@ -1,9 +1,9 @@
-# transcode [![GitHub license](https://img.shields.io/github/license/gonejack/hsize.svg?color=blue)](LICENSE.md)
+# transcode [![GitHub license](https://img.shields.io/github/license/gonejack/hsize.svg?color=blue)](LICENSE)
 Command line tool for translating text encoding
 
 ## Installation
 ```
-go get -u github.com/gonejack/hsize
+go get -u github.com/gonejack/transcode
 ```
 
 ## Usage
@@ -16,5 +16,5 @@ By arguments:
 
 By stdin:
 ```
-> cat source.txt | grep transcode
+> cat source.txt | transcode
 ```
