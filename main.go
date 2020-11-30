@@ -115,9 +115,9 @@ func processFiles() {
 	return
 }
 func processFile(file string) (err error) {
-	input, output, doDisk := os.Stdin, os.Stdout, file != "-"
+	source, target, isDiskOp := os.Stdin, os.Stdout, file != "-"
 
-	if doDisk {
+	if isDiskOp {
 		{
 			var abs string
 			verbose("[RESOLVE] %s", file)
@@ -129,9 +129,9 @@ func processFile(file string) (err error) {
 			verbose("[RESOLVE] %s done: %s", file, abs)
 
 			verbose("[OPEN] %s", abs)
-			input, err = os.Open(abs)
+			source, err = os.Open(abs)
 			if err == nil {
-				defer input.Close()
+				defer source.Close()
 			} else {
 				return
 			}
@@ -139,49 +139,49 @@ func processFile(file string) (err error) {
 		}
 		{
 			verbose("[OPEN] temp file")
-			output, err = ioutil.TempFile("", fmt.Sprintf("file_%s.", filepath.Base(input.Name())))
+			target, err = ioutil.TempFile("", fmt.Sprintf("file_%s.", filepath.Base(source.Name())))
 			if err == nil {
-				defer output.Close()
+				defer target.Close()
 			} else {
 				return
 			}
-			verbose("[OPEN] temp file done: %s", output.Name())
+			verbose("[OPEN] temp file done: %s", target.Name())
 		}
 	}
 
-	verbose("[TRANSFER] %s => %s", input.Name(), output.Name())
+	verbose("[TRANSFER] %s => %s", source.Name(), target.Name())
 	_, err = io.Copy(
-		transform.NewWriter(output, targetEncoding.NewEncoder()),
-		transform.NewReader(input, sourceEncoding.NewDecoder()),
+		transform.NewWriter(target, targetEncoding.NewEncoder()),
+		transform.NewReader(source, sourceEncoding.NewDecoder()),
 	)
 	if err != nil {
-		err = fmt.Errorf("translate %s => %s failed: %s", input.Name(), output.Name(), err)
+		err = fmt.Errorf("translate %s => %s failed: %s", source.Name(), target.Name(), err)
 		return
 	}
-	verbose("[TRANSFER] %s => %s done", input.Name(), output.Name())
+	verbose("[TRANSFER] %s => %s done", source.Name(), target.Name())
 
-	if doDisk {
-		outputName := input.Name() + ".out"
+	if isDiskOp {
+		targetRename := source.Name() + ".out"
 
 		if doReplace {
-			verbose("[REMOVE] %s", input.Name())
-			err = os.Remove(input.Name())
+			verbose("[REMOVE] %s", source.Name())
+			err = os.Remove(source.Name())
 			if err != nil {
-				err = fmt.Errorf("remove %s failed: %w", input.Name(), err)
+				err = fmt.Errorf("remove %s failed: %w", source.Name(), err)
 				return
 			}
-			verbose("[REMOVE] %s done", input.Name())
+			verbose("[REMOVE] %s done", source.Name())
 
-			outputName = input.Name()
+			targetRename = source.Name()
 		}
 
-		verbose("[RENAME] %s => %s", output.Name(), outputName)
-		err = os.Rename(output.Name(), outputName)
+		verbose("[RENAME] %s => %s", target.Name(), targetRename)
+		err = os.Rename(target.Name(), targetRename)
 		if err != nil {
-			err = fmt.Errorf("rename %s => %s failed: %w", output.Name(), outputName, err)
+			err = fmt.Errorf("rename %s => %s failed: %w", target.Name(), targetRename, err)
 			return
 		}
-		verbose("[RENAME] %s => %s", output.Name(), outputName)
+		verbose("[RENAME] %s => %s", target.Name(), targetRename)
 	}
 
 	return
