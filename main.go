@@ -2,95 +2,105 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
+	"github.com/spf13/cobra"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/transform"
-	"io"
-	"io/ioutil"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
+
+	nested "github.com/antonfisher/nested-logrus-formatter"
+	"github.com/sirupsen/logrus"
 )
 
 var (
-	sourceEncoding, _ = parseEncoding("GBK")
-	targetEncoding, _ = parseEncoding("UTF8")
+	sourceEncodingArg string
+	targetEncodingArg string
+	sourceEncoding    encoding.Encoding
+	targetEncoding    encoding.Encoding
 
 	doReplace = false
 	doVerbose = false
-
-	files []string
 )
-
-func main() {
-	parseArgs()
-
-	if len(files) == 0 {
-		files = []string{"-"}
-		doVerbose = false
-	}
-
-	processFiles()
-}
-
-const _help = `Examples:
-Work with files:
-  {exec} [-r] [-s encoding] [-t encoding] [-v] files...
-Work with stdio: 
-  cat file | {exec}
-
-Arguments:
-  -r          Replace/overwrite source file
-  -s          Source encoding, default: GBK
-  -t          Target encoding, default: UTF8
-  -v          Verbose
-  -h, --help  Print this help
-`
-
-func help() {
-	fmt.Println(strings.ReplaceAll(_help, "{exec}", filepath.Base(os.Args[0])))
-	os.Exit(0)
-}
-func exit(err error) {
-	log.Print(err)
-	os.Exit(-1)
-}
-func verbose(format string, a ...interface{}) {
-	if doVerbose {
-		fmt.Println(fmt.Sprintf(format, a...))
-	}
-}
-
-func parseArgs() {
-	var err error
-	var args = os.Args[1:]
-
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "-h", "--help":
-			help()
-		case "-s", "-t":
-			if i+1 >= len(args) {
-				exit(fmt.Errorf("missing encoding [%s] for argument %s", args[i+1], args[i]))
-			}
-			if args[i] == "-s" {
-				sourceEncoding, err = parseEncoding(args[i+1])
-			} else {
-				targetEncoding, err = parseEncoding(args[i+1])
-			}
-			if err != nil {
-				exit(err)
-			}
-			i += 1
-		case "-r":
-			doReplace = true
-		case "-v":
-			doVerbose = true
-		default:
-			files = append(files, args[i])
+var cmd = &cobra.Command{
+	Use:   "Work with files:\n    transcode [-r] [-s encoding] [-t encoding] [-v] files...\n  Work with stdin:\n    cat file | transcode",
+	Short: "Translate text encoding",
+	RunE: func(md *cobra.Command, args []string) (err error) {
+		sourceEncoding, err = parseEncoding(sourceEncodingArg)
+		if err != nil {
+			return fmt.Errorf("parse source-encoding failed: %w", err)
 		}
-	}
+		targetEncoding, err = parseEncoding(targetEncodingArg)
+		if err != nil {
+			return fmt.Errorf("parse target-encoding failed: %w", err)
+		}
+
+		if len(args) == 0 {
+			args = []string{"-"}
+			doVerbose = false
+		}
+
+		if doVerbose {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
+
+		for _, file := range args {
+			logrus.Debugf("process %s start", file)
+			err = processFile(file)
+			if err != nil {
+				logrus.WithError(err).Errorf("process %s error", file)
+			}
+			logrus.Debugf("process %s end", file)
+		}
+
+		return
+	},
+}
+
+func init() {
+	cmd.Flags().SortFlags = false
+	cmd.PersistentFlags().SortFlags = false
+	cmd.PersistentFlags().BoolVarP(
+		&doReplace,
+		"replace-source",
+		"r",
+		false,
+		"replace/overwrite source file",
+	)
+	cmd.PersistentFlags().StringVarP(
+		&sourceEncodingArg,
+		"source-encoding",
+		"s",
+		"GBK",
+		"source encoding",
+	)
+	cmd.PersistentFlags().StringVarP(
+		&targetEncodingArg,
+		"target-encoding",
+		"t",
+		"UTF8",
+		"target encoding",
+	)
+	cmd.PersistentFlags().BoolVarP(
+		&doVerbose,
+		"verbose",
+		"v",
+		false,
+		"verbose",
+	)
+
+	logrus.SetFormatter(&nested.Formatter{
+		TimestampFormat: "2006-01-02 15:04:05",
+		//NoColors:        true,
+		HideKeys:    true,
+		CallerFirst: true,
+	})
+}
+func main() {
+	_ = cmd.Execute()
 }
 func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
 	enc, err = htmlindex.Get(encoding)
@@ -99,57 +109,47 @@ func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
 	}
 	return
 }
-
-func processFiles() {
-	var err error
-
-	for _, file := range files {
-		verbose("=== %s ===", file)
-		err = processFile(file)
-		if err != nil {
-			log.Print(err)
-		}
-		verbose("=== %s ===", file)
-	}
-
-	return
-}
 func processFile(file string) (err error) {
 	source, target, isDiskOp := os.Stdin, os.Stdout, file != "-"
 
 	if isDiskOp {
+		var abs string
 		{
-			var abs string
-			verbose("[RESOLVE] %s", file)
+			logger := logrus.WithField("step", "RESOLVE")
+			logger.Debugf("resolve %s", file)
 			abs, err = filepath.Abs(file)
 			if err != nil {
 				err = fmt.Errorf("cannot parse file path %s", file)
 				return
 			}
-			verbose("[RESOLVE] %s done: %s", file, abs)
-
-			verbose("[OPEN] %s", abs)
+			logger.Debugf("resolve %s done: %s", file, abs)
+		}
+		{
+			logger := logrus.WithField("step", "OPEN")
+			logger.Debugf("open %s", abs)
 			source, err = os.Open(abs)
 			if err == nil {
 				defer source.Close()
 			} else {
 				return
 			}
-			verbose("[OPEN] %s done", abs)
+			logger.Debugf("open %s ok", abs)
 		}
 		{
-			verbose("[OPEN] temp file")
+			logger := logrus.WithField("step", "OPEN")
+			logger.Debugf("create temp file")
 			target, err = ioutil.TempFile("", fmt.Sprintf("file_%s.", filepath.Base(source.Name())))
 			if err == nil {
 				defer target.Close()
 			} else {
 				return
 			}
-			verbose("[OPEN] temp file done: %s", target.Name())
+			logger.Debugf("create temp file %s ok", target.Name())
 		}
 	}
 
-	verbose("[TRANSFER] %s => %s", source.Name(), target.Name())
+	logger := logrus.WithField("step", "TRANSFER")
+	logger.Debugf("transfer %s => %s", source.Name(), target.Name())
 	_, err = io.Copy(
 		transform.NewWriter(target, targetEncoding.NewEncoder()),
 		transform.NewReader(source, sourceEncoding.NewDecoder()),
@@ -158,30 +158,36 @@ func processFile(file string) (err error) {
 		err = fmt.Errorf("translate %s => %s failed: %s", source.Name(), target.Name(), err)
 		return
 	}
-	verbose("[TRANSFER] %s => %s done", source.Name(), target.Name())
+	logger.Debugf("transfer %s => %s done", source.Name(), target.Name())
 
 	if isDiskOp {
 		targetRename := source.Name() + ".out"
 
 		if doReplace {
-			verbose("[REMOVE] %s", source.Name())
+			logger := logrus.WithField("step", "REMOVE")
+			logger.Debugf("remove %s", source.Name())
 			err = os.Remove(source.Name())
 			if err != nil {
 				err = fmt.Errorf("remove %s failed: %w", source.Name(), err)
 				return
 			}
-			verbose("[REMOVE] %s done", source.Name())
+			logger.Debugf("remove %s done", source.Name())
 
 			targetRename = source.Name()
 		}
 
-		verbose("[RENAME] %s => %s", target.Name(), targetRename)
-		err = os.Rename(target.Name(), targetRename)
-		if err != nil {
-			err = fmt.Errorf("rename %s => %s failed: %w", target.Name(), targetRename, err)
-			return
+		logger := logrus.WithField("step", "RENAME")
+		{
+			logger.Debugf("rename %s => %s", target.Name(), targetRename)
+			err = os.Rename(target.Name(), targetRename)
+			if err != nil {
+				err = fmt.Errorf("rename %s => %s failed: %w", target.Name(), targetRename, err)
+				return
+			}
+			logger.Debugf("rename %s => %s done", target.Name(), targetRename)
 		}
-		verbose("[RENAME] %s => %s", target.Name(), targetRename)
+
+		logrus.Infof("save into %s", targetRename)
 	}
 
 	return
