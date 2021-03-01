@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	nested "github.com/antonfisher/nested-logrus-formatter"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,80 +13,82 @@ import (
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/transform"
 
-	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	sourceEncodingArg string
-	targetEncodingArg string
-	sourceEncoding    encoding.Encoding
-	targetEncoding    encoding.Encoding
+	flagSourceEncoding string
+	flagTargetEncoding string
 
-	doReplace = false
-	doVerbose = false
-)
-var cmd = &cobra.Command{
-	Use:   "Work with files:\n    transcode [-r] [-s encoding] [-t encoding] [-v] files...\n  Work with stdin:\n    cat file | transcode",
-	Short: "Translate text encoding",
-	RunE: func(md *cobra.Command, args []string) (err error) {
-		sourceEncoding, err = parseEncoding(sourceEncodingArg)
-		if err != nil {
-			return fmt.Errorf("parse source-encoding failed: %w", err)
-		}
-		targetEncoding, err = parseEncoding(targetEncodingArg)
-		if err != nil {
-			return fmt.Errorf("parse target-encoding failed: %w", err)
-		}
+	flagReplace bool
+	flagVerbose bool
 
-		if len(args) == 0 {
-			args = []string{"-"}
-			doVerbose = false
-		}
+	sourceEncoding encoding.Encoding
+	targetEncoding encoding.Encoding
 
-		if doVerbose {
-			logrus.SetLevel(logrus.DebugLevel)
-		}
-
-		for _, file := range args {
-			logrus.Debugf("process %s start", file)
-			err = processFile(file)
+	cmd = &cobra.Command{
+		Use:   "Work with files:\n    transcode [-r] [-s encoding] [-t encoding] [-v] files...\n  Work with stdin:\n    cat file | transcode",
+		Short: "Translate text encoding",
+		RunE: func(md *cobra.Command, args []string) (err error) {
+			sourceEncoding, err = parseEncoding(flagSourceEncoding)
 			if err != nil {
-				logrus.WithError(err).Errorf("process %s error", file)
+				return fmt.Errorf("parse source-encoding failed: %w", err)
 			}
-			logrus.Debugf("process %s end", file)
-		}
 
-		return
-	},
-}
+			targetEncoding, err = parseEncoding(flagTargetEncoding)
+			if err != nil {
+				return fmt.Errorf("parse target-encoding failed: %w", err)
+			}
+
+			if len(args) == 0 {
+				args = []string{"-"}
+				flagVerbose = false
+			}
+
+			if flagVerbose {
+				logrus.SetLevel(logrus.DebugLevel)
+			}
+
+			for _, file := range args {
+				logrus.Debugf("process %s start", file)
+				err = process(file)
+				if err != nil {
+					logrus.WithError(err).Errorf("process %s error", file)
+				}
+				logrus.Debugf("process %s end", file)
+			}
+
+			return
+		},
+	}
+)
 
 func init() {
 	cmd.Flags().SortFlags = false
 	cmd.PersistentFlags().SortFlags = false
 	cmd.PersistentFlags().BoolVarP(
-		&doReplace,
+		&flagReplace,
 		"replace-source",
 		"r",
 		false,
 		"replace/overwrite source file",
 	)
 	cmd.PersistentFlags().StringVarP(
-		&sourceEncodingArg,
+		&flagSourceEncoding,
 		"source-encoding",
 		"s",
 		"GBK",
 		"source encoding",
 	)
 	cmd.PersistentFlags().StringVarP(
-		&targetEncodingArg,
+		&flagTargetEncoding,
 		"target-encoding",
 		"t",
 		"UTF8",
 		"target encoding",
 	)
 	cmd.PersistentFlags().BoolVarP(
-		&doVerbose,
+		&flagVerbose,
 		"verbose",
 		"v",
 		false,
@@ -102,18 +105,13 @@ func init() {
 func main() {
 	_ = cmd.Execute()
 }
-func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
-	enc, err = htmlindex.Get(encoding)
-	if err != nil {
-		err = fmt.Errorf("invalid encoding: %s", encoding)
-	}
-	return
-}
-func processFile(file string) (err error) {
+
+func process(file string) (err error) {
 	source, target, isDiskOp := os.Stdin, os.Stdout, file != "-"
 
 	if isDiskOp {
 		var abs string
+		// resolve source path
 		{
 			logger := logrus.WithField("step", "RESOLVE")
 			logger.Debugf("resolve %s", file)
@@ -124,6 +122,7 @@ func processFile(file string) (err error) {
 			}
 			logger.Debugf("resolve %s done: %s", file, abs)
 		}
+		// open source file
 		{
 			logger := logrus.WithField("step", "OPEN")
 			logger.Debugf("open %s", abs)
@@ -135,6 +134,7 @@ func processFile(file string) (err error) {
 			}
 			logger.Debugf("open %s ok", abs)
 		}
+		// create temp file
 		{
 			logger := logrus.WithField("step", "OPEN")
 			logger.Debugf("create temp file")
@@ -148,6 +148,7 @@ func processFile(file string) (err error) {
 		}
 	}
 
+	// transfer source => target/temp file
 	logger := logrus.WithField("step", "TRANSFER")
 	logger.Debugf("transfer %s => %s", source.Name(), target.Name())
 	_, err = io.Copy(
@@ -160,10 +161,11 @@ func processFile(file string) (err error) {
 	}
 	logger.Debugf("transfer %s => %s done", source.Name(), target.Name())
 
+	// renaming target file
 	if isDiskOp {
-		targetRename := source.Name() + ".out"
+		saveTarget := source.Name() + ".out"
 
-		if doReplace {
+		if flagReplace {
 			logger := logrus.WithField("step", "REMOVE")
 			logger.Debugf("remove %s", source.Name())
 			err = os.Remove(source.Name())
@@ -173,22 +175,27 @@ func processFile(file string) (err error) {
 			}
 			logger.Debugf("remove %s done", source.Name())
 
-			targetRename = source.Name()
+			saveTarget = source.Name()
 		}
 
 		logger := logrus.WithField("step", "RENAME")
-		{
-			logger.Debugf("rename %s => %s", target.Name(), targetRename)
-			err = os.Rename(target.Name(), targetRename)
-			if err != nil {
-				err = fmt.Errorf("rename %s => %s failed: %w", target.Name(), targetRename, err)
-				return
-			}
-			logger.Debugf("rename %s => %s done", target.Name(), targetRename)
+		logger.Debugf("rename %s => %s", target.Name(), saveTarget)
+		err = os.Rename(target.Name(), saveTarget)
+		if err != nil {
+			err = fmt.Errorf("rename %s => %s failed: %w", target.Name(), saveTarget, err)
+			return
 		}
+		logger.Debugf("rename %s => %s done", target.Name(), saveTarget)
 
-		logrus.Infof("save into %s", targetRename)
+		logrus.Infof("save into %s", saveTarget)
 	}
 
+	return
+}
+func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
+	enc, err = htmlindex.Get(encoding)
+	if err != nil {
+		err = fmt.Errorf("invalid encoding: %s", encoding)
+	}
 	return
 }
