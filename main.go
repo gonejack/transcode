@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	nested "github.com/antonfisher/nested-logrus-formatter"
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/transform"
 
+	"github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 )
 
@@ -51,8 +51,7 @@ var (
 
 			for _, file := range args {
 				logrus.Debugf("process %s start", file)
-				err = process(file)
-				if err != nil {
+				if err := process(file); err != nil {
 					logrus.WithError(err).Errorf("process %s error", file)
 				}
 				logrus.Debugf("process %s end", file)
@@ -95,7 +94,7 @@ func init() {
 		"verbose",
 	)
 
-	logrus.SetFormatter(&nested.Formatter{
+	logrus.SetFormatter(&formatter.Formatter{
 		TimestampFormat: "2006-01-02 15:04:05",
 		//NoColors:        true,
 		HideKeys:    true,
