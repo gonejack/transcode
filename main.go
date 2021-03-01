@@ -116,8 +116,7 @@ func process(file string) (err error) {
 			logger.Debugf("resolve %s", file)
 			abs, err = filepath.Abs(file)
 			if err != nil {
-				err = fmt.Errorf("cannot parse file path %s", file)
-				return
+				return fmt.Errorf("cannot parse file path %s", file)
 			}
 			logger.Debugf("resolve %s done: %s", file, abs)
 		}
@@ -155,8 +154,7 @@ func process(file string) (err error) {
 		transform.NewReader(source, sourceEncoding.NewDecoder()),
 	)
 	if err != nil {
-		err = fmt.Errorf("translate %s => %s failed: %s", source.Name(), target.Name(), err)
-		return
+		return fmt.Errorf("translate %s => %s failed: %s", source.Name(), target.Name(), err)
 	}
 	logger.Debugf("transfer %s => %s done", source.Name(), target.Name())
 
@@ -169,8 +167,7 @@ func process(file string) (err error) {
 			logger.Debugf("remove %s", source.Name())
 			err = os.Remove(source.Name())
 			if err != nil {
-				err = fmt.Errorf("remove %s failed: %w", source.Name(), err)
-				return
+				return fmt.Errorf("remove %s failed: %w", source.Name(), err)
 			}
 			logger.Debugf("remove %s done", source.Name())
 
@@ -181,8 +178,7 @@ func process(file string) (err error) {
 		logger.Debugf("rename %s => %s", target.Name(), saveTarget)
 		err = os.Rename(target.Name(), saveTarget)
 		if err != nil {
-			err = fmt.Errorf("rename %s => %s failed: %w", target.Name(), saveTarget, err)
-			return
+			return fmt.Errorf("rename %s => %s failed: %w", target.Name(), saveTarget, err)
 		}
 		logger.Debugf("rename %s => %s done", target.Name(), saveTarget)
 
