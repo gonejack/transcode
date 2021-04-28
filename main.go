@@ -64,35 +64,15 @@ var (
 
 func init() {
 	cmd.Flags().SortFlags = false
-	cmd.PersistentFlags().SortFlags = false
-	cmd.PersistentFlags().BoolVarP(
-		&flagReplace,
-		"replace-source",
-		"r",
-		false,
-		"replace/overwrite source file",
-	)
-	cmd.PersistentFlags().StringVarP(
-		&flagSourceEncoding,
-		"source-encoding",
-		"s",
-		"GBK",
-		"source encoding",
-	)
-	cmd.PersistentFlags().StringVarP(
-		&flagTargetEncoding,
-		"target-encoding",
-		"t",
-		"UTF8",
-		"target encoding",
-	)
-	cmd.PersistentFlags().BoolVarP(
-		&flagVerbose,
-		"verbose",
-		"v",
-		false,
-		"verbose",
-	)
+
+	flags := cmd.PersistentFlags()
+	{
+		flags.SortFlags = false
+		flags.BoolVarP(&flagReplace, "replace-source", "r", false, "replace/overwrite source file")
+		flags.StringVarP(&flagSourceEncoding, "source-encoding", "s", "GBK", "source encoding")
+		flags.StringVarP(&flagTargetEncoding, "target-encoding", "t", "UTF8", "target encoding")
+		flags.BoolVarP(&flagVerbose, "verbose", "v", false, "verbose")
+	}
 
 	logrus.SetFormatter(&formatter.Formatter{
 		TimestampFormat: "2006-01-02 15:04:05",
