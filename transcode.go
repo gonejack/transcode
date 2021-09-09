@@ -78,43 +78,43 @@ func (c *transcode) process(file string) (err error) {
 		var abs string
 		// resolve source path
 		{
-			logger := logrus.WithField("step", "RESOLVE")
-			logger.Debugf("resolve %s", file)
+			log := logrus.WithField("step", "RESOLVE")
+			log.Debugf("resolve %s", file)
 			abs, err = filepath.Abs(file)
 			if err != nil {
 				return fmt.Errorf("cannot parse file path %s", file)
 			}
-			logger.Debugf("resolve %s done: %s", file, abs)
+			log.Debugf("resolve %s done: %s", file, abs)
 		}
 		// open source file
 		{
-			logger := logrus.WithField("step", "OPEN")
-			logger.Debugf("open %s", abs)
+			log := logrus.WithField("step", "OPEN")
+			log.Debugf("open %s", abs)
 			source, err = os.Open(abs)
 			if err == nil {
 				defer source.Close()
 			} else {
 				return
 			}
-			logger.Debugf("open %s ok", abs)
+			log.Debugf("open %s ok", abs)
 		}
 		// create temp file
 		{
-			logger := logrus.WithField("step", "OPEN")
-			logger.Debugf("create temp file")
-			target, err = ioutil.TempFile("", fmt.Sprintf("file_%s.", filepath.Base(source.Name())))
+			log := logrus.WithField("step", "OPEN")
+			log.Debugf("create temp file")
+			target, err = ioutil.TempFile("", fmt.Sprintf("transcode_%s.", filepath.Base(source.Name())))
 			if err == nil {
 				defer target.Close()
 			} else {
 				return
 			}
-			logger.Debugf("create temp file %s ok", target.Name())
+			log.Debugf("create temp file %s ok", target.Name())
 		}
 	}
 
 	// transfer source => target/temp file
-	logger := logrus.WithField("step", "TRANSFER")
-	logger.Debugf("transfer %s => %s", source.Name(), target.Name())
+	log := logrus.WithField("step", "TRANSFER")
+	log.Debugf("transfer %s => %s", source.Name(), target.Name())
 	_, err = io.Copy(
 		transform.NewWriter(target, c.target.NewEncoder()),
 		transform.NewReader(source, c.source.NewDecoder()),
@@ -122,30 +122,30 @@ func (c *transcode) process(file string) (err error) {
 	if err != nil {
 		return fmt.Errorf("translate %s => %s failed: %s", source.Name(), target.Name(), err)
 	}
-	logger.Debugf("transfer %s => %s done", source.Name(), target.Name())
+	log.Debugf("transfer %s => %s done", source.Name(), target.Name())
 
 	// renaming target file
 	if writeDisk {
-		output := source.Name() + ".out"
+		output := source.Name() + ".transcode" + filepath.Ext(source.Name())
 
 		if c.Overwrite {
-			logger := logrus.WithField("step", "REMOVE")
-			logger.Debugf("remove %s", source.Name())
+			log := logrus.WithField("step", "REMOVE")
+			log.Debugf("remove %s", source.Name())
 			err = os.Remove(source.Name())
 			if err != nil {
 				return fmt.Errorf("remove %s failed: %w", source.Name(), err)
 			}
-			logger.Debugf("remove %s done", source.Name())
+			log.Debugf("remove %s done", source.Name())
 			output = source.Name()
 		}
 
-		logger := logrus.WithField("step", "RENAME")
-		logger.Debugf("rename %s => %s", target.Name(), output)
+		log := logrus.WithField("step", "RENAME")
+		log.Debugf("rename %s => %s", target.Name(), output)
 		err = os.Rename(target.Name(), output)
 		if err != nil {
 			return fmt.Errorf("rename %s => %s failed: %w", target.Name(), output, err)
 		}
-		logger.Debugf("rename %s => %s done", target.Name(), output)
+		log.Debugf("rename %s => %s done", target.Name(), output)
 		logrus.Infof("save into %s", output)
 	}
 

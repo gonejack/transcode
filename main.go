@@ -13,6 +13,7 @@ func init() {
 		CallerFirst: true,
 	})
 }
+
 func main() {
 	err := new(transcode).run()
 	if err != nil {
