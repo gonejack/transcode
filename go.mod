@@ -1,6 +1,6 @@
 module github.com/gonejack/transcode
 
-go 1.15
+go 1.17
 
 require (
 	github.com/antonfisher/nested-logrus-formatter v1.3.0

@@ -1,5 +1,9 @@
-# transcode [![GitHub license](https://img.shields.io/github/license/gonejack/hsize.svg?color=blue)](LICENSE)
+# transcode
 Command line tool for translating text encoding
+
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/gonejack/transcode)
+![Build](https://github.com/gonejack/transcode/actions/workflows/go.yml/badge.svg)
+[![GitHub license](https://img.shields.io/github/license/gonejack/transcode.svg?color=blue)](LICENSE)
 
 ## Installation
 ```
