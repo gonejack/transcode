@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -102,7 +101,7 @@ func (c *transcode) process(file string) (err error) {
 		{
 			log := logrus.WithField("step", "OPEN")
 			log.Debugf("create temp file")
-			target, err = ioutil.TempFile("", fmt.Sprintf("transcode_%s.", filepath.Base(source.Name())))
+			target, err = os.CreateTemp("", fmt.Sprintf("transcode_%s.", filepath.Base(source.Name())))
 			if err == nil {
 				defer target.Close()
 			} else {
