@@ -94,6 +94,7 @@ func (c *transcode) process(file string) (err error) {
 			}
 			if err == nil {
 				src.Truncate(0)
+				src.Seek(0, io.SeekStart)
 				dst.Seek(0, io.SeekStart)
 				_, err = io.Copy(src, dst)
 			}
