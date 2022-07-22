@@ -23,13 +23,12 @@ By stdin:
 > cat source.txt | transcode
 ```
 
-## `Options`
+## Flags
 ```
 Flags:
   -h, --help                      Show context-sensitive help.
-  -s, --source-encoding="gbk"     Set source encoding.
-  -t, --target-encoding="utf8"    Set target encoding.
-  -r, --overwrite                 Overwrite source file.
-  -v, --verbose                   Verbose printing.
+  -s, --source-encoding="auto"    Set source encoding, default as auto-detection.
+  -t, --target-encoding="utf8"    Set target encoding, default as utf8.
+  -w, --overwrite                 Overwrite source file.
       --about                     Show about.
 ```

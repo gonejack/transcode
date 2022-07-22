@@ -1,20 +1,24 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"strings"
 
 	"github.com/alecthomas/kong"
+	"github.com/gogs/chardet"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/transform"
 )
 
 type options struct {
-	SourceEncoding string   `short:"s" name:"source-encoding" default:"gbk" help:"Set source encoding."`
-	TargetEncoding string   `short:"t" name:"target-encoding" default:"utf8" help:"Set target encoding."`
-	Overwrite      bool     `short:"r" name:"overwrite" help:"Overwrite source file."`
+	SourceEncoding string   `short:"s" name:"source-encoding" default:"auto" help:"Set source encoding, default as auto-detection."`
+	TargetEncoding string   `short:"t" name:"target-encoding" default:"utf8" help:"Set target encoding, default as utf8."`
+	Overwrite      bool     `short:"w" name:"overwrite" help:"Overwrite source file."`
 	About          bool     `help:"Show about."`
 	File           []string `arg:"" optional:""`
 }
@@ -36,17 +40,13 @@ func (c *transcode) run() (err error) {
 		return
 	}
 
-	c.source, err = parseEncoding(c.SourceEncoding)
-	if err != nil {
-		return fmt.Errorf("parse source-encoding failed: %w", err)
+	if len(c.File) == 0 {
+		c.File = append(c.File, "-")
 	}
+
 	c.target, err = parseEncoding(c.TargetEncoding)
 	if err != nil {
 		return fmt.Errorf("parse target-encoding failed: %w", err)
-	}
-
-	if len(c.File) == 0 {
-		c.File = append(c.File, "-")
 	}
 
 	for _, f := range c.File {
@@ -59,36 +59,63 @@ func (c *transcode) run() (err error) {
 	return
 }
 func (c *transcode) process(file string) (err error) {
-	source, target := os.Stdin, os.Stdout
+	src, dst := os.Stdin, os.Stdout
 
 	if file != "-" {
-		source, err = os.OpenFile(file, os.O_RDWR, 0755)
+		src, err = os.OpenFile(file, os.O_RDWR, 0755)
 		if err != nil {
 			return
 		}
-		defer source.Close()
-		if c.Overwrite {
-			target, err = os.CreateTemp(os.TempDir(), "")
-			if err != nil {
-				return
-			}
-			defer target.Close()
-			defer func() {
-				if err == nil {
-					source.Seek(0, io.SeekStart)
-					target.Seek(0, io.SeekStart)
-					_, err = io.Copy(source, target)
-				}
-			}()
+		defer src.Close()
+	}
+	rdr := bufio.NewReader(src)
+	switch {
+	case strings.EqualFold(c.SourceEncoding, "auto"):
+		c.source, err = determineEncoding(rdr)
+		if err != nil {
+			return fmt.Errorf("cannot determine source-encoding: %w", err)
+		}
+	default:
+		c.source, err = parseEncoding(c.SourceEncoding)
+		if err != nil {
+			return fmt.Errorf("parse source-encoding failed: %w", err)
 		}
 	}
-
+	if src != os.Stdin && c.Overwrite {
+		dst, err = os.CreateTemp(os.TempDir(), "")
+		if err != nil {
+			return
+		}
+		defer dst.Close()
+		defer func() {
+			if c.source == c.target {
+				log.Printf("no change, file %s is already in target encoding %s", file, c.target)
+				return
+			}
+			if err == nil {
+				src.Truncate(0)
+				dst.Seek(0, io.SeekStart)
+				_, err = io.Copy(src, dst)
+			}
+		}()
+	}
 	_, err = io.Copy(
-		transform.NewWriter(target, c.target.NewEncoder()),
-		transform.NewReader(source, c.source.NewDecoder()),
+		transform.NewWriter(dst, c.target.NewEncoder()),
+		transform.NewReader(rdr, c.source.NewDecoder()),
 	)
-
 	return
+}
+
+func determineEncoding(r *bufio.Reader) (e encoding.Encoding, err error) {
+	b, err := r.Peek(2048)
+	if len(b) == 0 {
+		return nil, fmt.Errorf("cannot detect encoding: %w", err)
+	}
+	rs, err := chardet.NewTextDetector().DetectBest(b)
+	if err != nil {
+		return
+	}
+	return parseEncoding(rs.Charset)
 }
 
 func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
