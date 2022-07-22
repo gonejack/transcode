@@ -1,5 +1,5 @@
 # transcode
-Command line tool for translating text encoding
+This command line do text file encoding converts
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/gonejack/transcode)
 ![Build](https://github.com/gonejack/transcode/actions/workflows/go.yml/badge.svg)
@@ -7,7 +7,7 @@ Command line tool for translating text encoding
 
 ## Installation
 ```
-go get -u github.com/gonejack/transcode
+go install github.com/gonejack/transcode@latest
 ```
 
 ## Usage
