@@ -55,12 +55,10 @@ func (c *transcode) run() (err error) {
 			return
 		}
 	}
-
 	return
 }
 func (c *transcode) process(file string) (err error) {
 	src, dst := os.Stdin, os.Stdout
-
 	if file != "-" {
 		src, err = os.OpenFile(file, os.O_RDWR, 0755)
 		if err != nil {
@@ -68,10 +66,10 @@ func (c *transcode) process(file string) (err error) {
 		}
 		defer src.Close()
 	}
-	rdr := bufio.NewReader(src)
+	srd := bufio.NewReader(src)
 	switch {
 	case strings.EqualFold(c.SourceEncoding, "auto"):
-		c.source, err = determineEncoding(rdr)
+		c.source, err = detectEncoding(srd)
 		if err != nil {
 			return fmt.Errorf("cannot determine source-encoding: %w", err)
 		}
@@ -82,16 +80,17 @@ func (c *transcode) process(file string) (err error) {
 		}
 	}
 	if src != os.Stdin && c.Overwrite {
+		if c.source == c.target {
+			log.Printf("no changes, source file %s is already in target encoding %s", file, c.target)
+			return
+		}
 		dst, err = os.CreateTemp(os.TempDir(), "")
 		if err != nil {
 			return
 		}
+		defer os.Remove(dst.Name())
 		defer dst.Close()
 		defer func() {
-			if c.source == c.target {
-				log.Printf("no change, file %s is already in target encoding %s", file, c.target)
-				return
-			}
 			if err == nil {
 				src.Truncate(0)
 				src.Seek(0, io.SeekStart)
@@ -102,21 +101,21 @@ func (c *transcode) process(file string) (err error) {
 	}
 	_, err = io.Copy(
 		transform.NewWriter(dst, c.target.NewEncoder()),
-		transform.NewReader(rdr, c.source.NewDecoder()),
+		transform.NewReader(srd, c.source.NewDecoder()),
 	)
 	return
 }
 
-func determineEncoding(r *bufio.Reader) (e encoding.Encoding, err error) {
-	b, err := r.Peek(2048)
-	if len(b) == 0 {
+func detectEncoding(r *bufio.Reader) (e encoding.Encoding, err error) {
+	dat, err := r.Peek(2048)
+	if len(dat) == 0 {
 		return nil, fmt.Errorf("cannot detect encoding: %w", err)
 	}
-	rs, err := chardet.NewTextDetector().DetectBest(b)
+	res, err := chardet.NewTextDetector().DetectBest(dat)
 	if err != nil {
 		return
 	}
-	return parseEncoding(rs.Charset)
+	return parseEncoding(res.Charset)
 }
 
 func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
