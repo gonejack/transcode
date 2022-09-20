@@ -52,7 +52,7 @@ func (c *transcode) run() (err error) {
 	for _, f := range c.File {
 		err = c.process(f)
 		if err != nil {
-			return
+			return fmt.Errorf("process %s failed: %w", f, err)
 		}
 	}
 	return
