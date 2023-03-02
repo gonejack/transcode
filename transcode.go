@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -69,6 +70,9 @@ func (c *transcode) process(file string) (err error) {
 		stat, exx := src.Stat()
 		if exx != nil {
 			return fmt.Errorf("read file info failed: %w", exx)
+		}
+		if !stat.Mode().IsRegular() {
+			return errors.New("not a regular file")
 		}
 		if stat.Size() == 0 {
 			log.Printf("no changes, source file %s is empty", file)
