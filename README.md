@@ -1,5 +1,5 @@
 # transcode
-This command line do text file encoding converts
+This command line do text file encoding conversions
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/gonejack/transcode)
 ![Build](https://github.com/gonejack/transcode/actions/workflows/go.yml/badge.svg)
@@ -32,3 +32,6 @@ Flags:
   -w, --overwrite                 Overwrite source file.
       --about                     Show about.
 ```
+
+## Advices
+For converting Simplified Chinese texts into UTF-8, set source encoding as gb18030 instead of gbk or gb2312 for maximum compatibility.
