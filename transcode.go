@@ -46,7 +46,7 @@ func (c *transcode) run() (err error) {
 
 	c.target, err = parseEncoding(c.TargetEncoding)
 	if err != nil {
-		return fmt.Errorf("parse target-encoding failed: %w", err)
+		return fmt.Errorf("parse target-encoding %s failed: %w", c.TargetEncoding, err)
 	}
 
 	for _, f := range c.File {
@@ -55,6 +55,7 @@ func (c *transcode) run() (err error) {
 			return fmt.Errorf("process %s failed: %w", f, err)
 		}
 	}
+
 	return
 }
 func (c *transcode) process(file string) (err error) {
@@ -65,6 +66,14 @@ func (c *transcode) process(file string) (err error) {
 			return
 		}
 		defer src.Close()
+		stat, exx := src.Stat()
+		if exx != nil {
+			return fmt.Errorf("read file info failed: %w", exx)
+		}
+		if stat.Size() == 0 {
+			log.Printf("no changes, source file %s is empty", file)
+			return
+		}
 	}
 	srd := bufio.NewReader(src)
 	switch {
@@ -76,7 +85,7 @@ func (c *transcode) process(file string) (err error) {
 	default:
 		c.source, err = parseEncoding(c.SourceEncoding)
 		if err != nil {
-			return fmt.Errorf("parse source-encoding failed: %w", err)
+			return fmt.Errorf("parse source-encoding %s failed: %w", c.SourceEncoding, err)
 		}
 	}
 	if src != os.Stdin && c.Overwrite {
@@ -117,7 +126,6 @@ func detectEncoding(r *bufio.Reader) (e encoding.Encoding, err error) {
 	}
 	return parseEncoding(res.Charset)
 }
-
 func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
 	enc, err = htmlindex.Get(encoding)
 	if err != nil {
