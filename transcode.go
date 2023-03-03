@@ -62,19 +62,22 @@ func (c *transcode) run() (err error) {
 func (c *transcode) process(file string) (err error) {
 	src, dst := os.Stdin, os.Stdout
 	if file != "-" {
-		src, err = os.OpenFile(file, os.O_RDWR, 0755)
+		if c.Overwrite {
+			src, err = os.OpenFile(file, os.O_RDWR, 0)
+		} else {
+			src, err = os.Open(file)
+		}
 		if err != nil {
 			return
 		}
 		defer src.Close()
-		stat, exx := src.Stat()
-		if exx != nil {
+		st, exx := src.Stat()
+		switch {
+		case exx != nil:
 			return fmt.Errorf("read file info failed: %w", exx)
-		}
-		if !stat.Mode().IsRegular() {
+		case !st.Mode().IsRegular():
 			return errors.New("not a regular file")
-		}
-		if stat.Size() == 0 {
+		case st.Size() == 0:
 			log.Printf("no changes, source file %s is empty", file)
 			return
 		}
