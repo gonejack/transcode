@@ -55,7 +55,7 @@ func (c *trans) run() (err error) {
 	return
 }
 func (c *trans) trans(f string) (err error) {
-	src, dst := os.Stdin, os.Stdout
+	src, out := os.Stdin, os.Stdout
 	if f != "-" {
 		if c.Overwrite {
 			src, err = os.OpenFile(f, os.O_RDWR, 0)
@@ -95,23 +95,23 @@ func (c *trans) trans(f string) (err error) {
 			log.Printf("no changes, source file %s is already in target encoding %s", f, c.target)
 			return
 		}
-		dst, err = os.CreateTemp(os.TempDir(), "")
+		out, err = os.CreateTemp(os.TempDir(), "")
 		if err != nil {
 			return
 		}
-		defer os.Remove(dst.Name())
-		defer dst.Close()
 		defer func() {
 			if err == nil {
 				src.Truncate(0)
 				src.Seek(0, io.SeekStart)
-				dst.Seek(0, io.SeekStart)
-				_, err = io.Copy(src, dst)
+				out.Seek(0, io.SeekStart)
+				_, err = io.Copy(src, out)
 			}
+			out.Close()
+			os.Remove(out.Name())
 		}()
 	}
 	_, err = io.Copy(
-		transform.NewWriter(dst, c.target.NewEncoder()),
+		transform.NewWriter(out, c.target.NewEncoder()),
 		transform.NewReader(srd, c.source.NewDecoder()),
 	)
 	return
