@@ -23,49 +23,44 @@ type options struct {
 	About          bool     `help:"Show about."`
 	File           []string `arg:"" optional:""`
 }
-type transcode struct {
+type trans struct {
 	options
 	source encoding.Encoding
 	target encoding.Encoding
 }
 
-func (c *transcode) run() (err error) {
+func (c *trans) run() (err error) {
 	kong.Parse(&c.options,
 		kong.Name("transcode"),
 		kong.Description("Translate text encoding."),
 		kong.UsageOnError(),
 	)
-
 	if c.About {
 		fmt.Println("Visit https://github.com/gonejack/transcode")
 		return
 	}
-
 	if len(c.File) == 0 {
 		c.File = append(c.File, "-")
 	}
-
 	c.target, err = parseEncoding(c.TargetEncoding)
 	if err != nil {
 		return fmt.Errorf("parse target-encoding %s failed: %w", c.TargetEncoding, err)
 	}
-
 	for _, f := range c.File {
-		err = c.process(f)
+		err = c.trans(f)
 		if err != nil {
-			return fmt.Errorf("process %s failed: %w", f, err)
+			return fmt.Errorf("trans %s failed: %w", f, err)
 		}
 	}
-
 	return
 }
-func (c *transcode) process(file string) (err error) {
+func (c *trans) trans(f string) (err error) {
 	src, dst := os.Stdin, os.Stdout
-	if file != "-" {
+	if f != "-" {
 		if c.Overwrite {
-			src, err = os.OpenFile(file, os.O_RDWR, 0)
+			src, err = os.OpenFile(f, os.O_RDWR, 0)
 		} else {
-			src, err = os.Open(file)
+			src, err = os.Open(f)
 		}
 		if err != nil {
 			return
@@ -78,7 +73,7 @@ func (c *transcode) process(file string) (err error) {
 		case !st.Mode().IsRegular():
 			return errors.New("not a regular file")
 		case st.Size() == 0:
-			log.Printf("no changes, source file %s is empty", file)
+			log.Printf("no changes, source file %s is empty", f)
 			return
 		}
 	}
@@ -97,7 +92,7 @@ func (c *transcode) process(file string) (err error) {
 	}
 	if src != os.Stdin && c.Overwrite {
 		if c.source == c.target {
-			log.Printf("no changes, source file %s is already in target encoding %s", file, c.target)
+			log.Printf("no changes, source file %s is already in target encoding %s", f, c.target)
 			return
 		}
 		dst, err = os.CreateTemp(os.TempDir(), "")
@@ -123,11 +118,11 @@ func (c *transcode) process(file string) (err error) {
 }
 
 func detectEncoding(r *bufio.Reader) (e encoding.Encoding, err error) {
-	dat, err := r.Peek(2048)
-	if len(dat) == 0 {
+	hdr, err := r.Peek(2048)
+	if len(hdr) == 0 {
 		return nil, fmt.Errorf("cannot detect encoding: %w", err)
 	}
-	res, err := chardet.NewTextDetector().DetectBest(dat)
+	res, err := chardet.NewTextDetector().DetectBest(hdr)
 	if err != nil {
 		return
 	}

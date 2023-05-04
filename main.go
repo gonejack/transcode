@@ -5,8 +5,7 @@ import (
 )
 
 func main() {
-	err := new(transcode).run()
-	if err != nil {
-		log.Fatal(err)
+	if e := new(trans).run(); e != nil {
+		log.Fatal(e)
 	}
 }
