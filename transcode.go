@@ -19,6 +19,7 @@ import (
 type options struct {
 	SourceEncoding string   `short:"s" name:"source-encoding" default:"auto" help:"Set source encoding, default as auto-detection."`
 	TargetEncoding string   `short:"t" name:"target-encoding" default:"utf8" help:"Set target encoding, default as utf8."`
+	DetectEncoding bool     `short:"d" name:"detect-encoding" help:"Detect encoding only."`
 	Overwrite      bool     `short:"w" name:"overwrite" help:"Overwrite source file."`
 	About          bool     `help:"Show about."`
 	File           []string `arg:"" optional:""`
@@ -47,14 +48,14 @@ func (c *trans) run() (err error) {
 		return fmt.Errorf("parse target-encoding %s failed: %w", c.TargetEncoding, err)
 	}
 	for _, f := range c.File {
-		err = c.trans(f)
+		err = c.proc(f)
 		if err != nil {
-			return fmt.Errorf("trans %s failed: %w", f, err)
+			return fmt.Errorf("process %s failed: %w", f, err)
 		}
 	}
 	return
 }
-func (c *trans) trans(f string) (err error) {
+func (c *trans) proc(f string) (err error) {
 	src, out := os.Stdin, os.Stdout
 	if f != "-" {
 		if c.Overwrite {
@@ -79,8 +80,16 @@ func (c *trans) trans(f string) (err error) {
 	}
 	srd := bufio.NewReader(src)
 	switch {
+	case c.DetectEncoding:
+		enc, exx := detectEncoding(srd)
+		if exx != nil {
+			fmt.Printf("detect encoding of %s failed: %s", f, exx)
+		} else {
+			fmt.Printf("detected encoding of %s is %s", f, enc)
+		}
+		return
 	case strings.EqualFold(c.SourceEncoding, "auto"):
-		c.source, err = detectEncoding(srd)
+		c.source, err = autoEncoding(srd)
 		if err != nil {
 			return fmt.Errorf("cannot determine source-encoding: %w", err)
 		}
@@ -117,16 +126,12 @@ func (c *trans) trans(f string) (err error) {
 	return
 }
 
-func detectEncoding(r *bufio.Reader) (e encoding.Encoding, err error) {
-	hdr, err := r.Peek(2048)
-	if len(hdr) == 0 {
-		return nil, fmt.Errorf("cannot detect encoding: %w", err)
+func autoEncoding(r *bufio.Reader) (enc encoding.Encoding, err error) {
+	coding, err := detectEncoding(r)
+	if err == nil {
+		enc, err = parseEncoding(coding)
 	}
-	res, err := chardet.NewTextDetector().DetectBest(hdr)
-	if err != nil {
-		return
-	}
-	return parseEncoding(res.Charset)
+	return
 }
 func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
 	enc, err = htmlindex.Get(encoding)
@@ -134,4 +139,15 @@ func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
 		err = fmt.Errorf("invalid encoding: %s", encoding)
 	}
 	return
+}
+func detectEncoding(r *bufio.Reader) (string, error) {
+	hdr, err := r.Peek(2048)
+	if len(hdr) == 0 {
+		return "", fmt.Errorf("cannot read file: %w", err)
+	}
+	res, err := chardet.NewTextDetector().DetectBest(hdr)
+	if err != nil {
+		return "", err
+	}
+	return res.Charset, nil
 }
