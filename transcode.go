@@ -13,6 +13,7 @@ import (
 	"github.com/gogs/chardet"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
+	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 )
 
@@ -137,6 +138,10 @@ func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
 	enc, err = htmlindex.Get(encoding)
 	if err != nil {
 		err = fmt.Errorf("invalid encoding: %s", encoding)
+	}
+	switch enc {
+	case simplifiedchinese.GBK:
+		enc = simplifiedchinese.GB18030
 	}
 	return
 }

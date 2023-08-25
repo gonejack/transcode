@@ -32,6 +32,3 @@ Flags:
   -w, --overwrite                 Overwrite source file.
       --about                     Show about.
 ```
-
-## Advices
-For converting Simplified Chinese texts into UTF-8, set source encoding as gb18030 instead of gbk or gb2312 for maximum compatibility.
