@@ -105,7 +105,7 @@ func (c *trans) proc(f string) (err error) {
 			log.Printf("no changes, source file %s is already in target encoding %s", f, c.target)
 			return
 		}
-		out, err = os.CreateTemp(os.TempDir(), "")
+		out, err = os.CreateTemp(os.TempDir(), "transcode.*.txt")
 		if err != nil {
 			return
 		}
@@ -120,10 +120,7 @@ func (c *trans) proc(f string) (err error) {
 			os.Remove(out.Name())
 		}()
 	}
-	_, err = io.Copy(
-		transform.NewWriter(out, c.target.NewEncoder()),
-		transform.NewReader(srd, c.source.NewDecoder()),
-	)
+	_, err = io.Copy(transform.NewWriter(out, c.target.NewEncoder()), transform.NewReader(srd, c.source.NewDecoder()))
 	return
 }
 
