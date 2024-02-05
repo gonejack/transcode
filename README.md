@@ -6,25 +6,25 @@ This command line do text file encoding conversions
 [![GitHub license](https://img.shields.io/github/license/gonejack/transcode.svg?color=blue)](LICENSE)
 
 ## Installation
-```
-go install github.com/gonejack/transcode@latest
+```bash
+> go install github.com/gonejack/transcode@latest
 ```
 
 ## Usage
 
 By arguments:
-```
+```bash
 > transcode source.txt
 > transcode -s gbk -t utf8 source.txt
 ```
 
 By stdin:
-```
+```bash
 > cat source.txt | transcode
 ```
 
 ## Flags
-```
+```bash
 Flags:
   -h, --help                      Show context-sensitive help.
   -s, --source-encoding="auto"    Set source encoding, default as auto-detection.
