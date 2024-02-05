@@ -120,7 +120,10 @@ func (c *trans) proc(f string) (err error) {
 			os.Remove(out.Name())
 		}()
 	}
-	_, err = io.Copy(transform.NewWriter(out, c.target.NewEncoder()), transform.NewReader(srd, c.source.NewDecoder()))
+	r := transform.NewReader(srd, c.source.NewDecoder())
+	w := transform.NewWriter(out, c.target.NewEncoder())
+	_, err = io.Copy(w, r)
+	w.Close()
 	return
 }
 
