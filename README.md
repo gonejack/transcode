@@ -1,5 +1,5 @@
 # transcode
-This command line do text file encoding conversions
+This command line do text file encoding conversions.
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/gonejack/transcode)
 ![Build](https://github.com/gonejack/transcode/actions/workflows/go.yml/badge.svg)
@@ -24,7 +24,7 @@ By stdin:
 ```
 
 ## Flags
-```bash
+```
 Flags:
   -h, --help                      Show context-sensitive help.
   -s, --source-encoding="auto"    Set source encoding, default as auto-detection.
