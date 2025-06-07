@@ -91,9 +91,9 @@ func (c *trans) proc(f string) (err error) {
 	case c.DetectEncoding:
 		enc, exx := detectEncoding(srd)
 		if exx != nil {
-			fmt.Printf("detect encoding of %s failed: %s", f, exx)
+			fmt.Printf("detecting encoding of file %s failed: %s", f, exx)
 		} else {
-			fmt.Printf("detected encoding of %s is %s", f, enc)
+			fmt.Printf("encoding of file %s is %s", f, enc)
 		}
 		return
 	case strings.EqualFold(c.SourceEncoding, "auto"):
