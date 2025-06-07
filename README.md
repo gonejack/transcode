@@ -29,6 +29,8 @@ Flags:
   -h, --help                      Show context-sensitive help.
   -s, --source-encoding="auto"    Set source encoding, default as auto-detection.
   -t, --target-encoding="utf8"    Set target encoding, default as utf8.
+  -d, --detect-encoding           Detect encoding only.
   -w, --overwrite                 Overwrite source file.
+  -l, --list-encodings            list supported encodings
       --about                     Show about.
 ```
