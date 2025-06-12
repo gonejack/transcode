@@ -10,6 +10,8 @@ github.com/endeveit/enca v0.0.0-20160315071803-00fe968221ab h1:8sh8Pynho3gYrdzdb
 github.com/endeveit/enca v0.0.0-20160315071803-00fe968221ab/go.mod h1:p9sYlSrwy19GJyed1EXDwdZeL4rVBd1tPoPgDvs7U1Q=
 github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f h1:3BSP1Tbs2djlpprl7wCLuiqMaUh5SJkkzI2gDs+FgLs=
 github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f/go.mod h1:Pcatq5tYkCW2Q6yrR2VRHlbHpZ/R4/7qyL1TCF7vl14=
+github.com/gonejack/charamel v1.0.1 h1:TKBCkAl0PoI+0s6jJJMRoLl2rLhuHL+BPcXvCCsa6qo=
+github.com/gonejack/charamel v1.0.1/go.mod h1:RQJBTqDLll8x8xAJvJAFhQSoOphw8NKZ+paIcDS0aLk=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
@@ -18,6 +20,8 @@ github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKs
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/wlynxg/chardet v1.0.0 h1:2gEgdmy/at4xIC+mOfNf1OFsb4LtnG9IcumfRXii/d0=
 github.com/wlynxg/chardet v1.0.0/go.mod h1:DgEUcneT6QieJ9qEhtRFOHWOjSNLPAo8lwUhjNopcFE=
+github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
+github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
