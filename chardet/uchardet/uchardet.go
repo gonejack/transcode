@@ -7,17 +7,7 @@ package uchardet
 #include <stdlib.h>
 #include <string.h>
 #include <uchardet/uchardet.h>
-// Apple Silicon (M1/M2/M3)
-#cgo darwin,arm64 CPPFLAGS: -I/opt/homebrew/opt/uchardet/include
-#cgo darwin,arm64 LDFLAGS: -L/opt/homebrew/opt/uchardet/lib -luchardet
-
-// Intel macOS (x86_64)
-#cgo darwin,amd64 CPPFLAGS: -I/usr/local/include
-#cgo darwin,amd64 LDFLAGS: -L/usr/local/lib -luchardet
-
-// Linux (assumes installed in /usr/local)
-#cgo linux CPPFLAGS: -I/usr/local/include
-#cgo linux LDFLAGS: -L/usr/local/lib -luchardet
+#cgo pkg-config: uchardet
 */
 import "C"
 import "unsafe"

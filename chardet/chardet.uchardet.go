@@ -3,10 +3,16 @@
 package chardet
 
 import (
+	"errors"
+
 	"github.com/gonejack/transcode/chardet/uchardet"
 )
 
-func DetectEncoding(dat []byte) (string, error) {
+func init() {
+	prefer(DetectEncodingByUChardet)
+}
+
+func DetectEncodingByUChardet(dat []byte) (string, error) {
 	dec := uchardet.NewChardet()
 	defer dec.Release()
 	if dec.Handle(dat) == 0 {
@@ -14,5 +20,5 @@ func DetectEncoding(dat []byte) (string, error) {
 			return v, nil
 		}
 	}
-	return detectEncoding(dat)
+	return "", errors.New("detect failed by uchardet")
 }
