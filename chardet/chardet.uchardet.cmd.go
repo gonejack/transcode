@@ -30,7 +30,7 @@ func DetectEncodingByUChardetCmd(dat []byte) (string, error) {
 func lookupUchardet() (string, error) {
 	var ns = []string{"uchardet"}
 	if runtime.GOOS == "windows" {
-		ns = []string{"uchardet.exe", "uchardet"}
+		ns = []string{"./uchardet.exe", "uchardet.exe", "uchardet"}
 	}
 	for _, name := range ns {
 		_, err := exec.LookPath(name)
@@ -38,5 +38,5 @@ func lookupUchardet() (string, error) {
 			return name, nil
 		}
 	}
-	return "", errors.New("uchardet command not found in system PATH")
+	return "", errors.New("command uchardet not found in system PATH")
 }
