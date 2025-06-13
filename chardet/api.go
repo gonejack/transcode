@@ -9,6 +9,7 @@ func prefer(f detectFunc) {
 }
 
 var detectFuncList = []detectFunc{
+	DetectEncodingByUChardetCmd,
 	DetectEncodingByWlynxgChardet,
 	DetectEncodingByGogsChardet,
 }

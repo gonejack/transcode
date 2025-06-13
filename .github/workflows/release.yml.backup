@@ -1,0 +1,242 @@
+name: Release with uchardet
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Install dependencies for amd64
+        if: matrix.arch == 'amd64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config cmake
+
+      - name: Install dependencies for arm64
+        if: matrix.arch == 'arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config cmake
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt-get install -y libc6-dev-arm64-cross
+
+      - name: Build and install uchardet for amd64
+        if: matrix.arch == 'amd64'
+        run: |
+          git clone https://gitlab.freedesktop.org/uchardet/uchardet.git /tmp/uchardet
+          cd /tmp/uchardet
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+                -DBUILD_SHARED_LIBS=OFF \
+                -DCMAKE_INSTALL_PREFIX=/usr/local \
+                ..
+          make -j$(nproc)
+          sudo make install
+
+      - name: Build and install uchardet for arm64
+        if: matrix.arch == 'arm64'
+        run: |
+          git clone https://gitlab.freedesktop.org/uchardet/uchardet.git /tmp/uchardet
+          cd /tmp/uchardet
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+                -DBUILD_SHARED_LIBS=OFF \
+                -DCMAKE_INSTALL_PREFIX=/usr/local \
+                -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+                -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+                ..
+          make -j$(nproc)
+          sudo make install
+
+      - name: Build binary for amd64
+        if: matrix.arch == 'amd64'
+        run: |
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
+          go build -tags uchardet \
+            -ldflags "-s -w" \
+            -o transcode-linux-amd64
+
+      - name: Build binary for arm64
+        if: matrix.arch == 'arm64'
+        run: |
+          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
+          CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ \
+          go build -tags uchardet \
+            -ldflags "-s -w" \
+            -o transcode-linux-arm64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: transcode-linux-${{ matrix.arch }}
+          path: transcode-linux-${{ matrix.arch }}
+
+  build-windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Install MinGW and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64 pkg-config cmake
+
+      - name: Build uchardet for Windows
+        run: |
+          git clone https://gitlab.freedesktop.org/uchardet/uchardet.git /tmp/uchardet
+          cd /tmp/uchardet
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+                -DBUILD_SHARED_LIBS=OFF \
+                -DCMAKE_INSTALL_PREFIX=/usr/local/x86_64-w64-mingw32 \
+                -DCMAKE_SYSTEM_NAME=Windows \
+                -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+                -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+                ..
+          make -j$(nproc)
+          sudo make install
+
+      - name: Build Windows binary
+        run: |
+          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 \
+          CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ \
+          PKG_CONFIG_PATH=/usr/local/x86_64-w64-mingw32/lib/pkgconfig \
+          CGO_LDFLAGS="-luchardet -lstdc++ -static-libgcc -static-libstdc++ -lws2_32" \
+          go build -tags uchardet \
+            -ldflags "-s -w" \
+            -o transcode-windows-amd64.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: transcode-windows-amd64
+          path: transcode-windows-amd64.exe
+
+  build-macos-arm64:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Install dependencies
+        run: |
+          brew install uchardet pkg-config
+
+      - name: Create dist directory
+        run: mkdir -p dist
+
+      - name: Build macOS arm64 binary
+        run: |
+          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 \
+          go build -tags uchardet \
+            -ldflags "-s -w" \
+            -o dist/transcode-darwin-arm64
+
+      - name: Upload arm64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: transcode-darwin-arm64
+          path: dist/transcode-darwin-arm64
+
+  build-macos-amd64:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Install dependencies
+        run: |
+          brew install uchardet pkg-config
+
+      - name: Create dist directory
+        run: mkdir -p dist
+
+      - name: Build macOS amd64 binary
+        run: |
+          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 \
+          go build -tags uchardet \
+            -ldflags "-s -w" \
+            -o dist/transcode-darwin-amd64
+
+      - name: Upload amd64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: transcode-darwin-amd64
+          path: dist/transcode-darwin-amd64
+
+  release:
+    needs: [build-linux, build-windows, build-macos-arm64, build-macos-amd64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: List downloaded files
+        run: |
+          echo "Downloaded files:"
+          ls -la
+
+      - name: Create release archives
+        run: |
+          mkdir -p release
+
+          # Linux
+          chmod +x transcode-linux-amd64
+          tar -czf release/transcode-linux-amd64.tar.gz transcode-linux-amd64
+
+          chmod +x transcode-linux-arm64
+          tar -czf release/transcode-linux-arm64.tar.gz transcode-linux-arm64
+
+          # Windows
+          zip -j release/transcode-windows-amd64.zip transcode-windows-amd64.exe
+
+          # macOS
+          chmod +x transcode-darwin-amd64
+          tar -czf release/transcode-darwin-amd64.tar.gz transcode-darwin-amd64
+
+          chmod +x transcode-darwin-arm64
+          tar -czf release/transcode-darwin-arm64.tar.gz transcode-darwin-arm64
+
+      - name: Generate checksums
+        run: |
+          cd release
+          sha256sum *.tar.gz *.zip > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
