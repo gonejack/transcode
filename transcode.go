@@ -13,6 +13,8 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/encoding/unicode/utf32"
 	"golang.org/x/text/transform"
 
 	"github.com/gonejack/transcode/chardet"
@@ -149,6 +151,18 @@ func detectEncoding(r *bufio.Reader) (string, error) {
 	return chardet.DetectEncoding(hdr)
 }
 func parseEncoding(encoding string) (enc encoding.Encoding, err error) {
+	switch strings.ToLower(encoding) {
+	case chardet.UTF8WithBOM:
+		return unicode.UTF8BOM, nil
+	case chardet.UTF16LEWithBOM:
+		return unicode.UTF16(unicode.LittleEndian, unicode.UseBOM), nil
+	case chardet.UTF16BEWithBOM:
+		return unicode.UTF16(unicode.BigEndian, unicode.UseBOM), nil
+	case chardet.UTF32LEWithBOM:
+		return utf32.UTF32(utf32.LittleEndian, utf32.UseBOM), nil
+	case chardet.UTF32BEWithBOM:
+		return utf32.UTF32(utf32.BigEndian, utf32.UseBOM), nil
+	}
 	enc, err = htmlindex.Get(encoding)
 	if err != nil {
 		err = fmt.Errorf("invalid encoding: %s", encoding)

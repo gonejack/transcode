@@ -6,9 +6,11 @@ toolchain go1.24.3
 
 require (
 	github.com/alecthomas/kong v1.11.0
+	github.com/ebitengine/purego v0.9.1
 	github.com/endeveit/enca v0.0.0-20160315071803-00fe968221ab
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f
 	github.com/gonejack/charamel v1.0.2
+	github.com/jupiterrider/ffi v0.5.1
 	github.com/wlynxg/chardet v1.0.1
 	golang.org/x/text v0.26.0
 )

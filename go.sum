@@ -4,6 +4,8 @@ github.com/alecthomas/kong v1.11.0 h1:y++1gI7jf8O7G7l4LZo5ASFhrhJvzc+WgF/arranEm
 github.com/alecthomas/kong v1.11.0/go.mod h1:p2vqieVMeTAnaC83txKtXe8FLke2X07aruPWXyMPQrU=
 github.com/alecthomas/repr v0.4.0 h1:GhI2A8MACjfegCPVq9f1FLvIBS+DrQ2KQBFZP1iFzXc=
 github.com/alecthomas/repr v0.4.0/go.mod h1:Fr0507jx4eOXV7AlPV6AVZLYrLIuIeSOWtW57eE/O/4=
+github.com/ebitengine/purego v0.9.1 h1:a/k2f2HQU3Pi399RPW1MOaZyhKJL9w/xFpKAg4q1s0A=
+github.com/ebitengine/purego v0.9.1/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/endeveit/enca v0.0.0-20160315071803-00fe968221ab h1:8sh8Pynho3gYrdzdbe796TbjWmKbrDasgcvvD9vaCH0=
 github.com/endeveit/enca v0.0.0-20160315071803-00fe968221ab/go.mod h1:p9sYlSrwy19GJyed1EXDwdZeL4rVBd1tPoPgDvs7U1Q=
 github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f h1:3BSP1Tbs2djlpprl7wCLuiqMaUh5SJkkzI2gDs+FgLs=
@@ -12,6 +14,8 @@ github.com/gonejack/charamel v1.0.2 h1:X71K3fX2Tjz8EnS601mS439VN1BHyK4DAgNZDbGLX
 github.com/gonejack/charamel v1.0.2/go.mod h1:RQJBTqDLll8x8xAJvJAFhQSoOphw8NKZ+paIcDS0aLk=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
+github.com/jupiterrider/ffi v0.5.1 h1:l7ANXU+Ex33LilVa283HNaf/sTzCrrht7D05k6T6nlc=
+github.com/jupiterrider/ffi v0.5.1/go.mod h1:x7xdNKo8h0AmLuXfswDUBxUsd2OqUP4ekC8sCnsmbvo=
 github.com/wlynxg/chardet v1.0.1 h1:xyN64+w82gH7K1oLBqV7G1a6quVCATWYMmBcwz4gghY=
 github.com/wlynxg/chardet v1.0.1/go.mod h1:HLQMNsa0w4MkH2e7waQaFD+Yh85riFFTLhFtP8fsdbQ=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
