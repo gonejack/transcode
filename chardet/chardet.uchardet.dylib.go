@@ -26,12 +26,12 @@ func DetectEncodingByUChardetDylib(dat []byte) (string, error) {
 
 var (
 	lib                uintptr
-	uchardetNew        func() unsafe.Pointer
-	uchardetDelete     func(det unsafe.Pointer)
-	uchardetHandleData func(det unsafe.Pointer, data unsafe.Pointer, len uintptr) int
-	uchardetDataEnd    func(det unsafe.Pointer)
-	uchardetGetCharset func(det unsafe.Pointer) *byte // 返回 C 字符串 (char*)
-	uchardetReset      func(det unsafe.Pointer)
+	uchardetNew        func() uintptr
+	uchardetDelete     func(det uintptr)
+	uchardetHandleData func(det uintptr, data []byte, len int) int
+	uchardetDataEnd    func(det uintptr)
+	uchardetGetCharset func(det uintptr) *byte // 返回 C 字符串 (char*)
+	uchardetReset      func(det uintptr)
 )
 
 func init() {
@@ -50,7 +50,7 @@ func init() {
 }
 
 type Chardet struct {
-	det unsafe.Pointer
+	det uintptr
 }
 
 func NewChardet() *Chardet {
@@ -62,18 +62,17 @@ func NewChardet() *Chardet {
 	}
 }
 func (c *Chardet) Release() {
-	if c.det != nil {
+	if c.det != 0 {
 		uchardetDelete(c.det)
-		c.det = nil
+		c.det = 0
 	}
 }
 func (c *Chardet) Handle(buf []byte) int {
-	if c.det == nil || len(buf) == 0 {
+	if c.det == 0 || len(buf) == 0 {
 		return -1 // 或其他错误指示
 	}
-	dataPtr := unsafe.Pointer(&buf[0])
-	dlen := uintptr(len(buf))
-	return uchardetHandleData(c.det, dataPtr, dlen)
+	dlen := len(buf)
+	return uchardetHandleData(c.det, buf, dlen)
 }
 func (c *Chardet) End() string {
 	uchardetDataEnd(c.det)
