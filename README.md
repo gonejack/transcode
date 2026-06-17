@@ -34,3 +34,10 @@ Flags:
   -l, --list-encodings            list supported encodings
       --about                     Show about.
 ```
+
+## Acknowledgements
+
+Thanks to [charamel](https://github.com/chomechome/charamel) for the encoding
+detection model and to
+[cpython-wasi-build](https://github.com/brettcannon/cpython-wasi-build) for the
+CPython WASI release used by the embedded detector runtime.
