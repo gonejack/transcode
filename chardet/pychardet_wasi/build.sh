@@ -5,7 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$SCRIPT_DIR/app"
 CHARDET_DIR="$APP_DIR/chardet"
 CHARDET_REPO="${CHARDET_REPO:-https://github.com/chardet/chardet.git}"
-CHARDET_REF="${CHARDET_REF:-5.2.0}"
+CHARDET_REF="${CHARDET_REF:-7.7.0}"
+CHARDET_VERSION="${CHARDET_VERSION:-$CHARDET_REF}"
 
 usage() {
   cat >&2 <<EOF
@@ -18,6 +19,10 @@ sync-chardet downloads the upstream Python chardet package and refreshes:
 
   $CHARDET_DIR
 
+It then runs prepare.py to generate an uncompressed models.raw (the WASI
+runtime has no zlib module) and apply the small source patches needed by the
+reduced CPython stdlib.  A host python3 with zlib support is required.
+
 By default it clones:
 
   $CHARDET_REPO
@@ -26,7 +31,8 @@ By default it clones:
 Overrides:
 
   CHARDET_REPO=https://github.com/chardet/chardet.git
-  CHARDET_REF=5.2.0
+  CHARDET_REF=7.7.0
+  CHARDET_VERSION=7.7.0
   CHARDET_SOURCE=/path/to/local/chardet-checkout
 
 sync-cpython-wasi delegates to ../python_wasi/build.sh because the CPython
@@ -51,7 +57,7 @@ require_cmd() {
 }
 
 sync_chardet() {
-  local tmpdir source_dir
+  local tmpdir source_dir package_dir
   if [[ -n "${CHARDET_SOURCE:-}" ]]; then
     source_dir="$CHARDET_SOURCE"
   else
@@ -62,20 +68,27 @@ sync_chardet() {
     source_dir="$tmpdir/chardet"
   fi
 
-  if [[ ! -d "$source_dir/chardet" ]]; then
+  if [[ -d "$source_dir/src/chardet" ]]; then
+    package_dir="$source_dir/src/chardet"
+  elif [[ -d "$source_dir/chardet" ]]; then
+    package_dir="$source_dir/chardet"
+  else
     echo "invalid chardet source: $source_dir" >&2
-    echo "expected: $source_dir/chardet" >&2
+    echo "expected: $source_dir/chardet or $source_dir/src/chardet" >&2
     exit 1
   fi
 
+  require_cmd python3
   rm -rf "$CHARDET_DIR"
-  cp -R "$source_dir/chardet" "$CHARDET_DIR"
+  cp -R "$package_dir" "$CHARDET_DIR"
   if [[ -f "$source_dir/LICENSE" ]]; then
     cp "$source_dir/LICENSE" "$CHARDET_DIR/LICENSE"
   fi
 
   find "$CHARDET_DIR" \( -name '.DS_Store' -o -name '__pycache__' -o -name '*.pyc' \) -prune -exec rm -rf {} +
-  echo "synced chardet from $source_dir"
+  python3 "$SCRIPT_DIR/prepare.py" "$CHARDET_DIR" "$CHARDET_VERSION"
+  find "$CHARDET_DIR" \( -name '.DS_Store' -o -name '__pycache__' -o -name '*.pyc' \) -prune -exec rm -rf {} +
+  echo "synced chardet from $package_dir"
 }
 
 case "${1:-help}" in

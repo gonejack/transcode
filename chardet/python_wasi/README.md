@@ -35,8 +35,9 @@ CPYTHON_WASI_SOURCE=/path/to/extracted-release ./build.sh sync-cpython-wasi
 ```
 
 `annotationlib.py` and `ast.py` are part of the reduced stdlib because Python
-3.15's `typing.NamedTuple` support requires them. Run the detector tests after
-replacing the runtime:
+3.15's `typing.NamedTuple` support requires them. `dataclasses.py`,
+`hashlib.py`, `__future__.py`, and `_py_warnings.py` are needed by chardet
+7.x. Run the detector tests after replacing the runtime:
 
 ```sh
 go test -tags charamel_wazero ./chardet -run TestDetectEncoding -count=1 -v

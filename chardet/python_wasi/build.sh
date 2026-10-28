@@ -8,8 +8,10 @@ CPYTHON_WASI_ASSET="python-${CPYTHON_WASI_VERSION}-wasi_sdk-${CPYTHON_WASI_SDK}"
 CPYTHON_WASI_URL="${CPYTHON_WASI_URL:-https://github.com/brettcannon/cpython-wasi-build/releases/download/v${CPYTHON_WASI_VERSION}/${CPYTHON_WASI_ASSET}.zip}"
 
 PYTHON_STDLIB_FILES=(
+  __future__.py
   _collections_abc.py
   _py_abc.py
+  _py_warnings.py
   _weakrefset.py
   abc.py
   annotationlib.py
@@ -17,9 +19,11 @@ PYTHON_STDLIB_FILES=(
   codecs.py
   collections/__init__.py
   copyreg.py
+  dataclasses.py
   enum.py
   functools.py
   genericpath.py
+  hashlib.py
   keyword.py
   operator.py
   os.py
