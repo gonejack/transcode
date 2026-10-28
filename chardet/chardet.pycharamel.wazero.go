@@ -26,13 +26,10 @@ const (
 	charamelWasiAppEnv    = "CHARDET_CHARAMEL_WASI_APP"
 )
 
-//go:embed charamel_wasi/python.wasm
-var embeddedCharamelPythonWasm []byte
-
-//go:embed all:charamel_wasi/app all:charamel_wasi/lib
+//go:embed all:pycharamel_wasi/app
 var embeddedCharamelWasiFS embed.FS
 
-const embeddedCharamelWasiRoot = "charamel_wasi"
+const embeddedCharamelWasiRoot = "pycharamel_wasi"
 
 type charamelWasiSource struct {
 	wasm    []byte
@@ -152,7 +149,7 @@ func charamelWasiRuntime() (charamelWasiSource, error) {
 	var source charamelWasiSource
 	pythonWasm := os.Getenv(charamelPythonWasmEnv)
 	if pythonWasm == "" {
-		source.wasm = embeddedCharamelPythonWasm
+		source.wasm = embeddedPythonWasi
 	} else {
 		wasm, err := os.ReadFile(pythonWasm)
 		if err != nil {
@@ -172,7 +169,7 @@ func charamelWasiRuntime() (charamelWasiSource, error) {
 		source.rootDir = rootDir
 		source.homeDir = "/"
 	} else {
-		rootFS, err := fs.Sub(embeddedCharamelWasiFS, embeddedCharamelWasiRoot)
+		rootFS, err := fs.Sub(embeddedPythonWasiLib, embeddedPythonWasiRoot)
 		if err != nil {
 			return source, fmt.Errorf("charamel wasm embedded root unavailable: %w", err)
 		}

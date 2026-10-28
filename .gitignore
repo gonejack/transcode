@@ -1,1 +1,4 @@
 *.txt
+__pycache__/
+*.pyc
+.idea

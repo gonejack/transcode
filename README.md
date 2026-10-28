@@ -35,9 +35,28 @@ Flags:
       --about                     Show about.
 ```
 
+## Optional detectors
+
+Some detectors are opt-in build tags:
+
+- `charamel` / `charamel_wazero`: the Python
+  [charamel](https://github.com/chomechome/charamel) detector.
+- `pychardet` / `pychardet_wazero`: the Python
+  [chardet](https://github.com/chardet/chardet) detector.
+
+The Python detectors share a CPython WASI runtime vendored in
+`chardet/python_wasi`.
+
+For example:
+
+```bash
+> go build -tags pychardet .
+```
+
 ## Acknowledgements
 
 Thanks to [charamel](https://github.com/chomechome/charamel) for the encoding
-detection model and to
+detection model, to [chardet](https://github.com/chardet/chardet) for the Python
+encoding detector, and to
 [cpython-wasi-build](https://github.com/brettcannon/cpython-wasi-build) for the
 CPython WASI release used by the embedded detector runtime.
