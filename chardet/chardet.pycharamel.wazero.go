@@ -54,6 +54,10 @@ type charamelRuntimeState struct {
 
 var charamelWasmRuntime charamelRuntimeState
 
+func init() {
+	prefer(DetectEncodingByCharamelWasm)
+}
+
 func DetectEncodingByCharamelWasm(dat []byte) (string, error) {
 	if len(dat) == 0 {
 		return "", errors.New("charamel wasm: empty input")
